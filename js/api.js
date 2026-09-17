@@ -14,11 +14,25 @@
     body.set("action", action);
     body.set("args", JSON.stringify(args));
 
-    const response = await fetch(apiUrl(), {
-      method: "POST",
-      redirect: "follow",
-      body
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(), 30000);
+
+    let response;
+    try{
+      response = await fetch(apiUrl(), {
+        method: "POST",
+        redirect: "follow",
+        body,
+        signal: controller.signal
+      });
+    }catch(error){
+      if(error?.name === "AbortError"){
+        throw new Error("Sambungan mengambil masa terlalu lama. Sila cuba semula.");
+      }
+      throw error;
+    }finally{
+      clearTimeout(timeoutId);
+    }
 
     if(!response.ok){
       throw new Error(`API tidak dapat dihubungi (${response.status}).`);

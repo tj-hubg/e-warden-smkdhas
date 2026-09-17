@@ -77,9 +77,29 @@
   let adminToken = null;
   let pendingLogo = null;
   let currentReportRows = [];
+  let xlsxLoader = null;
 
   function gas(fn, ...args){
     return window.ewardenApi.call(fn, ...args);
+  }
+
+  function loadXlsx(){
+    if(window.XLSX) return Promise.resolve(window.XLSX);
+    if(xlsxLoader) return xlsxLoader;
+
+    xlsxLoader = new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+      script.async=true;
+      script.onload=()=>resolve(window.XLSX);
+      script.onerror=()=>reject(new Error("Modul eksport Excel gagal dimuatkan."));
+      document.head.appendChild(script);
+    }).catch(error=>{
+      xlsxLoader=null;
+      throw error;
+    });
+
+    return xlsxLoader;
   }
 
   function toast(message){
@@ -332,10 +352,10 @@
     }));
   }
 
-  async function renderStats(){
+  async function renderStats(statsData=null){
     if(!adminToken) return;
     try{
-      const s=await gas("getDashboardStats",adminToken);
+      const s=statsData||await gas("getDashboardStats",adminToken);
       const items=[
         ["JUMLAH WARDEN",s.totalWarden,"#1645a3"],
         ["PUNCH-IN",s.punchIn,"#059669"],
@@ -549,32 +569,37 @@
   }
 }
 
-  function exportExcel(){
+  async function exportExcel(){
     if(!currentReportRows.length){toast("Tiada rekod untuk dieksport.");return}
-    const {label}=reportBounds();
-    const summary=[
-      ["LAPORAN KEHADIRAN WARDEN"],
-      ["Sekolah",settings.SCHOOL_NAME||""],
-      ["Tempoh",label],
-      ["Tarikh Dijana",new Date().toLocaleString("ms-MY")],
-      [],
-      ["Jumlah Rekod",currentReportRows.length],
-      ["Rekod Lengkap",currentReportRows.filter(r=>r.status==="Lengkap").length],
-      ["Masih Bertugas",currentReportRows.filter(r=>r.status==="Bertugas").length]
-    ];
-    const detail=currentReportRows.map((r,i)=>({
-      "Bil":i+1,"Tarikh":r.date,"Kod Warden":r.wardenCode,"Nama Warden":r.wardenName,
-      "Punch-In":r.punchIn,"Lat Punch-In":r.punchInLat,"Lng Punch-In":r.punchInLng,
-      "Ketepatan Punch-In (m)":r.punchInAccuracy,"Jarak Punch-In (m)":r.punchInDistance,
-      "Punch-Out":r.punchOut,"Lat Punch-Out":r.punchOutLat,"Lng Punch-Out":r.punchOutLng,
-      "Ketepatan Punch-Out (m)":r.punchOutAccuracy,"Jarak Punch-Out (m)":r.punchOutDistance,
-      "Tempoh":r.duration,"Status":r.status
-    }));
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),"RINGKASAN");
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),"REKOD KEHADIRAN");
-    const safe=(settings.SCHOOL_NAME||"SMKDHAS").replace(/[\\/:*?"<>|]/g,"").slice(0,30);
-    XLSX.writeFile(wb,`Laporan_e-WARDEN_${safe}_${ymd(new Date())}.xlsx`);
+    try{
+      const XLSX=await loadXlsx();
+      const {label}=reportBounds();
+      const summary=[
+        ["LAPORAN KEHADIRAN WARDEN"],
+        ["Sekolah",settings.SCHOOL_NAME||""],
+        ["Tempoh",label],
+        ["Tarikh Dijana",new Date().toLocaleString("ms-MY")],
+        [],
+        ["Jumlah Rekod",currentReportRows.length],
+        ["Rekod Lengkap",currentReportRows.filter(r=>r.status==="Lengkap").length],
+        ["Masih Bertugas",currentReportRows.filter(r=>r.status==="Bertugas").length]
+      ];
+      const detail=currentReportRows.map((r,i)=>({
+        "Bil":i+1,"Tarikh":r.date,"Kod Warden":r.wardenCode,"Nama Warden":r.wardenName,
+        "Punch-In":r.punchIn,"Lat Punch-In":r.punchInLat,"Lng Punch-In":r.punchInLng,
+        "Ketepatan Punch-In (m)":r.punchInAccuracy,"Jarak Punch-In (m)":r.punchInDistance,
+        "Punch-Out":r.punchOut,"Lat Punch-Out":r.punchOutLat,"Lng Punch-Out":r.punchOutLng,
+        "Ketepatan Punch-Out (m)":r.punchOutAccuracy,"Jarak Punch-Out (m)":r.punchOutDistance,
+        "Tempoh":r.duration,"Status":r.status
+      }));
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),"RINGKASAN");
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),"REKOD KEHADIRAN");
+      const safe=(settings.SCHOOL_NAME||"SMKDHAS").replace(/[\\/:*?"<>|]/g,"").slice(0,30);
+      XLSX.writeFile(wb,`Laporan_e-WARDEN_${safe}_${ymd(new Date())}.xlsx`);
+    }catch(error){
+      toast(error.message||"Eksport Excel gagal.");
+    }
   }
 
   async function refreshRecords(){
@@ -589,9 +614,23 @@
   }
 
   async function refreshData(){
+    if(adminToken){
+      const [init,wardenData,attendanceData,statsData]=await Promise.all([
+        gas("getInitialAppData"),
+        gas("getAllWardens",adminToken),
+        gas("getAttendanceRecords",adminToken),
+        gas("getDashboardStats",adminToken)
+      ]);
+      settings=init.settings||{};radiusOptions=init.radiusOptions||[];wardens=init.wardens||[];reportOptions=init.reportOptions||[];
+      allWardens=wardenData||[];records=attendanceData||[];
+      applySettings();populateRadius();populateWardens();populateAdminWardenFilter();populateReportOptions();renderWardenAdmin();
+      renderDuty();renderMine();renderAdminRecords();await renderStats(statsData);
+      return;
+    }
+
     const init=await gas("getInitialAppData");
     settings=init.settings||{};radiusOptions=init.radiusOptions||[];wardens=init.wardens||[];reportOptions=init.reportOptions||[];
-    allWardens=adminToken?await gas("getAllWardens",adminToken):[];
+    allWardens=[];
     applySettings();populateRadius();populateWardens();populateAdminWardenFilter();populateReportOptions();renderWardenAdmin();
     await refreshRecords();
   }
@@ -600,7 +639,7 @@
     document.querySelectorAll(".admin-panel").forEach(x=>x.classList.remove("active"));
     $(`admin-${panel}-panel`).classList.add("active");
     document.querySelectorAll("[data-admin]").forEach(x=>x.classList.toggle("active",x.dataset.admin===panel));
-    window.scrollTo({top:0,behavior:"smooth"});
+    window.scrollTo({top:0,behavior:"auto"});
   }
 
   async function init(){
@@ -618,7 +657,7 @@
   }
 
   async function loadPartial(slotId,path){
-    const response=await fetch(path,{cache:"no-store"});
+    const response=await fetch(path,{cache:"default"});
     if(!response.ok) throw new Error(`Gagal memuatkan ${path}.`);
     $(slotId).innerHTML=await response.text();
   }
@@ -678,9 +717,9 @@
     document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>{
       document.querySelectorAll("[data-view]").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
       const v=btn.dataset.view;
-      if(v==="records") $("my-records-section").scrollIntoView({behavior:"smooth"});
-      else if(v==="profile") $("profile-card").scrollIntoView({behavior:"smooth"});
-      else window.scrollTo({top:0,behavior:"smooth"});
+      if(v==="records") $("my-records-section").scrollIntoView({behavior:"auto",block:"start"});
+      else if(v==="profile") $("profile-card").scrollIntoView({behavior:"auto",block:"start"});
+      else window.scrollTo({top:0,behavior:"auto"});
     }));
 
     document.querySelectorAll("[data-admin]").forEach(btn=>btn.addEventListener("click",()=>switchAdminPanel(btn.dataset.admin)));
