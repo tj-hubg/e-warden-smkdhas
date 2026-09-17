@@ -10,7 +10,7 @@
       --ink:#10234d;
     }
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
+    html{scroll-behavior:auto}
     body{margin:0;font-family:"Poppins",sans-serif;color:var(--ink);background:#dce9ff}
     .app-shell{
       position:relative;isolation:isolate;width:100%;min-height:calc(100 * min(var(--vh, 1vh), 1vh));
