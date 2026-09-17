@@ -1,0 +1,103 @@
+    <section id="warden-view" class="view active">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest">HARI INI</p>
+          <p id="current-date" class="mt-1 font-bold text-blue-950"></p>
+        </div>
+        <div class="rounded-2xl border-2 border-yellow-300 bg-blue-950 px-4 py-2 text-right text-white shadow-lg">
+          <p class="text-[10px] font-bold tracking-widest">MASA SEMASA</p>
+          <p id="current-time" class="font-mono text-lg font-bold">--:--:--</p>
+        </div>
+      </div>
+
+      <section class="raised-card mb-6 rounded-3xl bg-white/80 p-5">
+        <div class="mb-4 flex items-start gap-3">
+          <div class="rounded-2xl bg-yellow-200 p-3 text-blue-950 shadow-inner"><i data-lucide="map-pin"></i></div>
+          <div class="flex-1">
+            <h2 class="font-extrabold">SEMAKAN LOKASI</h2>
+            <p id="active-location-name" class="mt-1 text-xs font-semibold text-blue-800">Lokasi belum ditetapkan.</p>
+            <p id="location-message" class="mt-1 text-sm text-slate-500">Sila semak lokasi untuk meneruskan.</p>
+            <div id="gps-details" class="mt-3 hidden grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
+              <span>Latitude: <b id="latitude-value">—</b></span>
+              <span>Longitude: <b id="longitude-value">—</b></span>
+              <span>Disemak: <b id="checked-at">—</b></span>
+              <span>Radius: <b id="radius-value">—</b></span>
+            </div>
+          </div>
+          <span id="location-dot" class="status-dot mt-2 bg-slate-300"></span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+            <p class="text-xs font-semibold">Jarak dari lokasi</p>
+            <p id="distance-value" class="mt-1 font-bold">—</p>
+          </div>
+          <div class="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+            <p class="text-xs font-semibold">Ketepatan GPS</p>
+            <p id="accuracy-value" class="mt-1 font-bold">—</p>
+          </div>
+        </div>
+
+        <button id="check-location" type="button"
+                class="action-button mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-950 px-4 py-4 font-bold text-white">
+          <i data-lucide="crosshair"></i><span>SEMAK LOKASI</span>
+        </button>
+      </section>
+
+      <section id="profile-card" class="raised-card mb-6 rounded-3xl bg-white p-5">
+        <h2 class="font-extrabold">PROFIL WARDEN</h2>
+        <form id="warden-form" class="mt-4">
+          <label class="mb-1 block text-sm font-semibold" for="warden-select">Nama Warden</label>
+          <select id="warden-select" class="w-full rounded-xl border border-blue-200 bg-white px-3 text-blue-950">
+            <option value="">Pilih Nama Warden</option>
+          </select>
+          <p class="mt-3 text-xs leading-relaxed text-slate-500">Pilih profil sebelum membuat Punch-In atau Punch-Out.</p>
+          <button type="submit"
+                  class="action-button mt-4 w-full rounded-2xl bg-blue-950 px-4 py-3 font-bold text-white">
+            PILIH PROFIL
+          </button>
+        </form>
+
+        <div id="welcome-panel" class="mt-4 hidden rounded-2xl border border-yellow-300 bg-yellow-50 p-4">
+          <p class="text-sm">Selamat datang,</p>
+          <p id="welcome-name" class="mt-1 text-lg font-extrabold text-blue-950">—</p>
+          <p id="duty-status" class="mt-2 text-sm font-bold text-slate-600">Belum Punch-In</p>
+        </div>
+      </section>
+
+      <section class="raised-card rounded-3xl bg-white/90 p-5">
+        <h2 class="font-extrabold">REKOD KEHADIRAN</h2>
+        <p class="mt-1 text-sm text-slate-500">Profil dan lokasi dalam radius diperlukan. Lokasi akan disemak semula setiap kali Punch-In atau Punch-Out.</p>
+        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button id="punch-in" type="button" disabled
+                  class="action-button flex min-h-[82px] items-center justify-center gap-3 rounded-2xl bg-emerald-600 px-5 text-lg font-extrabold text-white opacity-50">
+            <i data-lucide="log-in"></i><span>PUNCH-IN</span>
+          </button>
+          <button id="punch-out" type="button" disabled
+                  class="action-button flex min-h-[82px] items-center justify-center gap-3 rounded-2xl bg-red-600 px-5 text-lg font-extrabold text-white opacity-50">
+            <i data-lucide="log-out"></i><span>PUNCH-OUT</span>
+          </button>
+        </div>
+        <div id="transaction-result" class="mt-4 hidden rounded-2xl p-4"></div>
+      </section>
+
+      <section id="my-records-section" class="mt-7">
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <h2 class="font-extrabold">REKOD SAYA</h2>
+          <select id="my-filter" class="rounded-xl border border-blue-200 bg-white px-3 text-sm">
+            <option value="all">Semua rekod</option>
+            <option value="today">Hari ini</option>
+            <option value="week">Minggu ini</option>
+            <option value="month">Bulan ini</option>
+          </select>
+        </div>
+        <div class="raised-card overflow-x-auto rounded-3xl bg-white">
+          <table class="w-full min-w-[580px] text-left text-sm">
+            <thead class="bg-blue-950 text-xs uppercase tracking-wide text-yellow-200">
+              <tr><th class="p-4">Tarikh</th><th class="p-4">Punch-In</th><th class="p-4">Punch-Out</th><th class="p-4">Tempoh</th><th class="p-4">Status</th></tr>
+            </thead>
+            <tbody id="my-records"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>

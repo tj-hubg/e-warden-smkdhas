@@ -1,0 +1,90 @@
+      <div id="admin-report-panel" class="admin-panel">
+        <section>
+          <h2 class="mb-4 font-extrabold">LAPORAN KEHADIRAN</h2>
+
+          <div class="raised-card rounded-3xl bg-white p-5">
+            <div class="grid gap-3 md:grid-cols-2">
+              <label class="text-sm font-semibold">Jenis laporan
+                <select id="report-mode" class="mt-1 w-full rounded-xl border border-blue-200 bg-white px-3"></select>
+              </label>
+
+              <label class="text-sm font-semibold">Warden
+                <select id="report-warden" class="mt-1 w-full rounded-xl border border-blue-200 bg-white px-3">
+                  <option value="all">Semua Warden</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="report-date-range" class="mt-3 grid gap-3 md:grid-cols-2">
+              <label class="text-sm font-semibold">Daripada tarikh
+                <input id="report-date-from" type="date" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+              <label class="text-sm font-semibold">Hingga tarikh
+                <input id="report-date-to" type="date" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+            </div>
+
+            <div id="report-week-range" class="mt-3 hidden grid gap-3 md:grid-cols-2">
+              <label class="text-sm font-semibold">Daripada minggu
+                <input id="report-week-from" type="week" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+              <label class="text-sm font-semibold">Hingga minggu
+                <input id="report-week-to" type="week" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+            </div>
+
+            <div id="report-month-range" class="mt-3 hidden grid gap-3 md:grid-cols-2">
+              <label class="text-sm font-semibold">Daripada bulan
+                <input id="report-month-from" type="month" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+              <label class="text-sm font-semibold">Hingga bulan
+                <input id="report-month-to" type="month" class="mt-1 w-full rounded-xl border border-blue-200 px-3">
+              </label>
+            </div>
+
+            <button id="preview-report" type="button"
+                    class="action-button mt-4 w-full rounded-xl bg-blue-950 px-4 py-3 font-bold text-white">
+              PAPAR LAPORAN
+            </button>
+          </div>
+
+          <div id="printable-report" class="mt-6 hidden">
+            <div class="raised-card rounded-3xl bg-white p-5">
+              <div class="mb-5 flex items-center gap-4 border-b pb-4">
+                <img id="report-logo" class="hidden h-20 w-20 object-contain">
+                <div>
+                  <p id="report-school" class="text-sm font-bold"></p>
+                  <h3 class="text-xl font-extrabold text-blue-950">LAPORAN KEHADIRAN WARDEN</h3>
+                  <p id="report-period-title" class="text-sm text-slate-600"></p>
+                  <p id="report-generated" class="text-xs text-slate-400"></p>
+                </div>
+              </div>
+
+              <div id="report-summary" class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4"></div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[900px] text-left text-sm">
+                  <thead class="bg-blue-950 text-xs uppercase text-yellow-200">
+                    <tr>
+                      <th class="p-3">Bil</th><th class="p-3">Tarikh</th><th class="p-3">Kod</th><th class="p-3">Nama</th>
+                      <th class="p-3">Punch-In</th><th class="p-3">Punch-Out</th><th class="p-3">Tempoh</th><th class="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-records"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="no-print mt-4 flex flex-col gap-3 sm:flex-row">
+              <button id="export-excel" type="button"
+                      class="action-button flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-4 font-bold text-white">
+                <i data-lucide="download"></i>EXPORT EXCEL
+              </button>
+              <button id="print-report" type="button"
+                      class="action-button flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-950 px-4 py-4 font-bold text-white">
+                <i data-lucide="printer"></i>CETAK LAPORAN
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>

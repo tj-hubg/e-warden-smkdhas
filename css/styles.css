@@ -1,0 +1,378 @@
+    :root{
+      --ui-scale:1;
+      --font-scale:1;
+      --space-scale:1;
+      --royal:#1645a3;
+      --deep:#082968;
+      --yellow:#ffe411;
+      --red:#ed1b38;
+      --sky:#eaf2ff;
+      --ink:#10234d;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:"Poppins",sans-serif;color:var(--ink);background:#dce9ff}
+    .app-shell{
+      position:relative;isolation:isolate;width:100%;min-height:calc(100 * min(var(--vh, 1vh), 1vh));
+      background:
+        radial-gradient(circle at 8% 4%,rgba(255,228,17,.52),transparent 24rem),
+        radial-gradient(circle at 93% 18%,rgba(237,27,56,.16),transparent 28rem),
+        linear-gradient(140deg,#ddecff 0%,#f8fbff 53%,#e6efff 100%);
+    }
+    .school-header{
+      background:linear-gradient(125deg,#082968,#1645a3 65%,#245bc5);
+      box-shadow:0 9px 0 #061d4e,0 17px 34px rgba(8,41,104,.28);
+    }
+    .crest-frame{background:transparent;box-shadow:none;height:7rem;width:7rem}
+    .crest-frame img{filter:drop-shadow(0 2px 1px rgba(0,0,0,.3))}
+    .raised-card{
+      border:1px solid rgba(12,48,117,.13);
+      box-shadow:0 8px 0 rgba(9,49,123,.15),0 18px 30px rgba(18,57,123,.15),inset 0 1px 0 rgba(255,255,255,.95);
+      transition:transform .22s ease,box-shadow .22s ease;
+    }
+    .raised-card:hover{transform:translateY(-3px);box-shadow:0 11px 0 rgba(9,49,123,.14),0 23px 38px rgba(18,57,123,.18),inset 0 1px 0 #fff}
+    .action-button{
+      box-shadow:0 5px 0 rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.32);
+      transform:translateY(0);transition:transform .15s,box-shadow .15s,filter .15s;
+    }
+    .action-button:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    .action-button:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.24)}
+    .view{display:none}.view.active{display:block}
+    .admin-panel{display:none}.admin-panel.active{display:block}
+    .status-dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+    .pulse{animation:pulse 1.6s infinite}@keyframes pulse{50%{opacity:.45;transform:scale(.78)}}
+    .nav-item.active{background:#fff4b0;color:#082968;box-shadow:inset 0 0 0 1px #edc900}
+    .toast{transform:translate(-50%,130%);opacity:0;transition:.28s}
+    .toast.show{transform:translate(-50%,0);opacity:1}
+    .footer-copy{font-family:"Montserrat",sans-serif;font-style:italic;opacity:.58}
+    input,select{min-height:48px}
+    button{touch-action:manipulation}
+    .section-title{font-weight:800;color:#082968}
+    .loading-overlay{position:fixed;inset:0;z-index:100;background:rgba(8,41,104,.72);display:flex;align-items:center;justify-content:center}
+    .spinner{width:44px;height:44px;border:5px solid rgba(255,255,255,.3);border-top-color:#ffe411;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* TYPOGRAPHY LOCK — aligned to Canva master */
+    h1,h2,p,label,button,input,select,table{font-family:"Poppins",sans-serif}
+    #app-title{font-family:"Gotham Circular","Poppins",sans-serif}
+
+    #school-name{
+      color:#ffe411;
+      font-family:"Poppins",sans-serif;
+      font-size:.875rem;
+      line-height:1.25rem;
+      font-weight:700;
+      letter-spacing:.025em;
+    }
+
+    #current-time,.stat-value{font-family:"Inter",sans-serif}
+    .footer-copy{
+      margin:0;
+      padding:6px 10px 2px;
+      text-align:center;
+      font-family:"Montserrat",sans-serif;
+      font-style:italic;
+      font-weight:400;
+      font-size:.75rem;
+      line-height:1rem;
+      color:rgba(255,255,255,.58);
+      opacity:1;
+    }
+
+
+
+    /* =====================================================
+       MOBILE PORTRAIT REFERENCE LAYOUT
+       Target: browser phone view similar to approved Canva screenshot
+       Uses actual viewport-derived variables from JS, not fixed device labels.
+       ===================================================== */
+
+    html{
+      --mobile-w:390;
+      --mobile-scale:1;
+      --mobile-font:1;
+    }
+
+    body.mobile-portrait{
+      font-size:calc(18px * var(--mobile-font));
+    }
+
+    body.mobile-portrait .app-shell{
+      background:
+        radial-gradient(circle at 10% 4%,rgba(255,228,17,.48),transparent 18rem),
+        radial-gradient(circle at 92% 20%,rgba(237,27,56,.12),transparent 20rem),
+        linear-gradient(145deg,#ddecff 0%,#f9fbff 55%,#e8f0ff 100%);
+    }
+
+    body.mobile-portrait .school-header{
+      position:sticky;
+      top:0;
+      z-index:30;
+      border-bottom:4px solid #ffe411;
+      box-shadow:0 5px 0 #061d4e,0 10px 22px rgba(8,41,104,.22);
+    }
+
+    body.mobile-portrait .school-header > div{
+      max-width:none!important;
+      padding:
+        calc(12px * var(--mobile-scale))
+        calc(14px * var(--mobile-scale))!important;
+      gap:calc(12px * var(--mobile-scale))!important;
+      align-items:center!important;
+    }
+
+    body.mobile-portrait .crest-frame{
+      width:calc(74px * var(--mobile-scale))!important;
+      height:calc(74px * var(--mobile-scale))!important;
+      flex:0 0 calc(74px * var(--mobile-scale))!important;
+      padding:0!important;
+    }
+
+    body.mobile-portrait #school-name{
+      font-size:calc(13px * var(--mobile-font))!important;
+      line-height:1.15!important;
+      margin:0!important;
+      color:#ffe411!important;
+      letter-spacing:.02em!important;
+    }
+
+    body.mobile-portrait #app-title{
+      margin-top:3px!important;
+      font-size:calc(27px * var(--mobile-font))!important;
+      line-height:1.05!important;
+      white-space:nowrap;
+    }
+
+    body.mobile-portrait #app-subtitle{
+      margin-top:5px!important;
+      font-size:calc(13px * var(--mobile-font))!important;
+      line-height:1.2!important;
+      opacity:.95;
+    }
+
+    body.mobile-portrait #mode-button{
+      min-width:calc(92px * var(--mobile-scale));
+      min-height:calc(46px * var(--mobile-scale));
+      padding:0 calc(13px * var(--mobile-scale))!important;
+      border-radius:14px!important;
+      font-size:calc(13px * var(--mobile-font))!important;
+      white-space:nowrap;
+    }
+
+    body.mobile-portrait main{
+      max-width:none!important;
+      padding:
+        calc(24px * var(--mobile-scale))
+        calc(16px * var(--mobile-scale))
+        calc(150px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #warden-view > div:first-child{
+      margin-bottom:calc(24px * var(--mobile-scale))!important;
+      align-items:center!important;
+    }
+
+    body.mobile-portrait #warden-view > div:first-child > div:first-child > p:first-child{
+      font-size:calc(12px * var(--mobile-font))!important;
+      letter-spacing:.13em!important;
+    }
+
+    body.mobile-portrait #current-date{
+      margin-top:5px!important;
+      font-size:calc(18px * var(--mobile-font))!important;
+      line-height:1.2!important;
+    }
+
+    body.mobile-portrait #current-time{
+      font-size:calc(19px * var(--mobile-font))!important;
+      line-height:1!important;
+    }
+
+    body.mobile-portrait #warden-view > div:first-child > div:last-child{
+      border-radius:18px!important;
+      padding:
+        calc(10px * var(--mobile-scale))
+        calc(15px * var(--mobile-scale))!important;
+      min-width:calc(145px * var(--mobile-scale));
+    }
+
+    body.mobile-portrait .raised-card{
+      border-radius:24px!important;
+      padding:calc(22px * var(--mobile-scale))!important;
+      margin-bottom:calc(24px * var(--mobile-scale))!important;
+      box-shadow:
+        0 8px 0 rgba(9,49,123,.15),
+        0 16px 24px rgba(18,57,123,.13),
+        inset 0 1px 0 rgba(255,255,255,.95)!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(1){
+      background:rgba(255,255,255,.82)!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(1) h2{
+      font-size:calc(26px * var(--mobile-font))!important;
+      line-height:1.05!important;
+      color:#082968!important;
+    }
+
+    body.mobile-portrait #active-location-name{
+      font-size:calc(15px * var(--mobile-font))!important;
+      line-height:1.25!important;
+      margin-top:5px!important;
+    }
+
+    body.mobile-portrait #location-message{
+      font-size:calc(16px * var(--mobile-font))!important;
+      line-height:1.35!important;
+      margin-top:4px!important;
+    }
+
+    body.mobile-portrait #gps-details{
+      font-size:calc(14px * var(--mobile-font))!important;
+      line-height:1.35!important;
+      margin-top:12px!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(1) .grid.grid-cols-2{
+      gap:calc(12px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(1) .grid.grid-cols-2 > div{
+      border-radius:18px!important;
+      padding:calc(15px * var(--mobile-scale))!important;
+      min-height:calc(84px * var(--mobile-scale));
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(1) .grid.grid-cols-2 p:first-child{
+      font-size:calc(13px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #distance-value,
+    body.mobile-portrait #accuracy-value{
+      margin-top:7px!important;
+      font-size:calc(20px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #check-location{
+      margin-top:calc(16px * var(--mobile-scale))!important;
+      min-height:calc(68px * var(--mobile-scale))!important;
+      border-radius:18px!important;
+      font-size:calc(18px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #profile-card h2,
+    body.mobile-portrait #warden-view section:nth-of-type(3) h2{
+      font-size:calc(25px * var(--mobile-font))!important;
+      line-height:1.1!important;
+      color:#082968!important;
+    }
+
+    body.mobile-portrait #warden-form label{
+      font-size:calc(16px * var(--mobile-font))!important;
+      margin-bottom:7px!important;
+    }
+
+    body.mobile-portrait #warden-select{
+      min-height:calc(66px * var(--mobile-scale))!important;
+      border-radius:16px!important;
+      font-size:calc(18px * var(--mobile-font))!important;
+      padding-left:calc(14px * var(--mobile-scale))!important;
+      padding-right:calc(14px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #warden-form > p{
+      margin-top:calc(14px * var(--mobile-scale))!important;
+      font-size:calc(14px * var(--mobile-font))!important;
+      line-height:1.5!important;
+    }
+
+    body.mobile-portrait #warden-form button{
+      margin-top:calc(18px * var(--mobile-scale))!important;
+      min-height:calc(62px * var(--mobile-scale))!important;
+      border-radius:16px!important;
+      font-size:calc(17px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #welcome-panel{
+      border-radius:18px!important;
+      padding:calc(16px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #welcome-panel > p:first-child{
+      font-size:calc(15px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #welcome-name{
+      font-size:calc(23px * var(--mobile-font))!important;
+      line-height:1.25!important;
+    }
+
+    body.mobile-portrait #duty-status{
+      font-size:calc(17px * var(--mobile-font))!important;
+      line-height:1.35!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(3) > p{
+      margin-top:6px!important;
+      font-size:calc(14px * var(--mobile-font))!important;
+      line-height:1.5!important;
+    }
+
+    body.mobile-portrait #warden-view section:nth-of-type(3) .grid{
+      gap:calc(14px * var(--mobile-scale))!important;
+      grid-template-columns:1fr!important;
+    }
+
+    body.mobile-portrait #punch-in,
+    body.mobile-portrait #punch-out{
+      min-height:calc(112px * var(--mobile-scale))!important;
+      border-radius:18px!important;
+      font-size:calc(21px * var(--mobile-font))!important;
+      gap:calc(12px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #punch-in svg,
+    body.mobile-portrait #punch-out svg{
+      width:calc(31px * var(--mobile-scale))!important;
+      height:calc(31px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait #my-records-section h2{
+      font-size:calc(24px * var(--mobile-font))!important;
+    }
+
+    body.mobile-portrait #my-filter{
+      min-height:calc(54px * var(--mobile-scale))!important;
+      font-size:calc(15px * var(--mobile-font))!important;
+      border-radius:14px!important;
+    }
+
+    body.mobile-portrait .nav-item{
+      min-width:calc(92px * var(--mobile-scale));
+      min-height:calc(58px * var(--mobile-scale));
+      font-size:calc(14px * var(--mobile-font))!important;
+      border-radius:14px!important;
+    }
+
+    body.mobile-portrait .nav-item svg{
+      width:calc(25px * var(--mobile-scale))!important;
+      height:calc(25px * var(--mobile-scale))!important;
+    }
+
+    body.mobile-portrait .footer-copy{
+      font-size:calc(11px * var(--mobile-font))!important;
+      line-height:1.2!important;
+      padding-top:6px!important;
+    }
+
+
+    @media print{
+      .no-print,#toast,.loading-overlay{display:none!important}
+      body,.app-shell{background:#fff!important}
+      #warden-view{display:none!important}
+      #admin-view{display:block!important}
+      #admin-dashboard-panel,#admin-attendance-panel{display:none!important}
+      #admin-report-panel{display:block!important}
+      .raised-card{box-shadow:none!important;border:1px solid #ddd!important}
+    }
