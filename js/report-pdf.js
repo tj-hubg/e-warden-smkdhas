@@ -32,8 +32,19 @@
 
   function wrapText(font,value,maxWidth,size=11){
     const source=String(value??"-").split("\n"),lines=[];
+    const splitToken=word=>{
+      const parts=[];
+      let part="";
+      for(const char of safe(word)){
+        const next=part+char;
+        if(part&&font.widthOfTextAtSize(next,size)>maxWidth){parts.push(part);part=char;}
+        else part=next;
+      }
+      if(part) parts.push(part);
+      return parts.length?parts:[""];
+    };
     source.forEach(part=>{
-      const words=part.trim().split(/\s+/).filter(Boolean);
+      const words=part.trim().split(/\s+/).filter(Boolean).flatMap(splitToken);
       if(!words.length){lines.push("");return;}
       let line="";
       words.forEach(word=>{
@@ -177,13 +188,13 @@
     drawText(page,"PRESTASI WARDEN",24,291,13,ctx.bold,C.midnight);
     const wRows=[...wardens.values()].map((w,i)=>[i+1,w.code,w.name,w.total,w.done,w.bad,w.active,durationLabel(w.minutes)]);
     if(!wRows.length) wRows.push(["-","-","Tiada rekod",0,0,0,0,"0j 00m"]);
-    table(page,ctx,{x:24,top:278,widths:[30,65,175,55,55,60,60,60],headers:["Bil.","ID Warden","Nama Warden","Jumlah Sesi","Sesi Selesai","Tidak Lengkap","Sedang Bertugas","Jumlah Tempoh"],rows:wRows,rowHeight:38,fontSize:11,headerHeight:42});
-    page.drawRectangle({x:600,y:112,width:217,height:166,color:colour(C.midnight),borderRadius:7});
-    drawText(page,"PEMERHATIAN PENGURUSAN",613,251,11,ctx.bold,C.gold);
+    table(page,ctx,{x:24,top:278,widths:[30,86,190,50,50,55,55,65],headers:["Bil.","ID Warden","Nama Warden","Jumlah Sesi","Sesi Selesai","Tidak Lengkap","Sedang Bertugas","Jumlah Tempoh"],rows:wRows,rowHeight:44,fontSize:11,headerHeight:46});
+    page.drawRectangle({x:619,y:112,width:198,height:166,color:colour(C.midnight),borderRadius:7});
+    drawText(page,"PEMERHATIAN PENGURUSAN",631,251,11,ctx.bold,C.gold);
     const rate=rows.length?((completed/rows.length)*100).toFixed(1):"0.0";
     [`Kadar sesi selesai: ${rate}%.`,`${incomplete} sesi tidak lengkap perlu disemak.`,`${active} sesi sedang bertugas.`,`Geofence: ${ctx.meta.radius||"-"} meter.`].forEach((text,i)=>{
-      const lines=wrapText(ctx.regular,text,191,11);
-      lines.forEach((line,j)=>drawText(page,line,613,226-i*31-j*13,11,ctx.regular,C.white));
+      const lines=wrapText(ctx.regular,text,174,11);
+      lines.forEach((line,j)=>drawText(page,line,631,226-i*31-j*13,11,ctx.regular,C.white));
     });
   }
 
@@ -200,7 +211,7 @@
     const endNo=rows.length?startNo+rows.length-1:0;title(page,ctx,"REKOD KEHADIRAN TERPERINCI",rows.length?`Sesi ${startNo} hingga ${endNo} | Masa, tempoh, status serta data GPS Punch-In dan Punch-Out`:"Tiada sesi dalam tempoh dipilih");
     const punchCell=(time,lat,lng,distance,accuracy)=>`${time?`Masa: ${time}`:"Masa: -"}\n${coordinate(lat,lng)}\nJarak ${metric(distance)} m | Tepat ${metric(accuracy)} m`;
     const detailRows=rows.length?rows.map((r,i)=>[startNo+i,r.date,r.wardenCode,r.wardenName,punchCell(r.punchIn,r.punchInLat,r.punchInLng,r.punchInDistance,r.punchInAccuracy),punchCell(r.punchOut,r.punchOutLat,r.punchOutLng,r.punchOutDistance,r.punchOutAccuracy),r.duration||"-",statusOf(r)]):[["-","-","-","Tiada rekod","-","-","-","-"]];
-    table(page,ctx,{x:26,top:370,widths:[30,65,75,140,160,160,70,90],headers:["Bil.","Tarikh","ID Warden","Nama Warden","PUNCH-IN\nMasa | GPS | Jarak","PUNCH-OUT\nMasa | GPS | Jarak","Tempoh","Status"],rows:detailRows,rowHeight:64,fontSize:11,headerHeight:42});
+    table(page,ctx,{x:26,top:370,widths:[30,75,90,150,145,145,65,90],headers:["Bil.","Tarikh","ID Warden","Nama Warden","PUNCH-IN\nMasa | GPS | Jarak","PUNCH-OUT\nMasa | GPS | Jarak","Tempoh","Status"],rows:detailRows,rowHeight:64,fontSize:11,headerHeight:42});
     const noteY=isFinal?160:42,noteH=28;
     page.drawRectangle({x:26,y:noteY,width:789.89,height:noteH,color:colour(C.ice),borderRadius:5});
     drawText(page,"Catatan: Jarak daripada pusat geofence. Ketepatan ialah anggaran GPS peranti.",38,noteY+10,11,ctx.regular,C.steel);
