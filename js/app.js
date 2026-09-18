@@ -670,7 +670,7 @@
       toast(error.message||"PDF gagal dijana.");
     }finally{
       button.disabled=false;
-      button.innerHTML='<i data-lucide="file-down"></i>SIMPAN / CETAK PDF';
+      button.innerHTML='<i data-lucide="file-down"></i>JANA &amp; SIMPAN PDF';
       if(window.lucide) lucide.createIcons();
     }
   }
