@@ -78,9 +78,60 @@
   let pendingLogo = null;
   let currentReportRows = [];
   let xlsxLoader = null;
+  const scriptLoaders = new Map();
+
+  function loadScript(src,test){
+    if(test()) return Promise.resolve();
+    if(scriptLoaders.has(src)) return scriptLoaders.get(src);
+    const promise=new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src=src;script.async=true;
+      script.onload=()=>test()?resolve():reject(new Error(`Modul ${src} gagal dimulakan.`));
+      script.onerror=()=>reject(new Error(`Modul ${src} gagal dimuatkan.`));
+      document.head.appendChild(script);
+    }).catch(error=>{scriptLoaders.delete(src);throw error;});
+    scriptLoaders.set(src,promise);
+    return promise;
+  }
+
+  async function ensureReportPdf(){
+    await loadScript("js/vendor/pdf-lib.min.js",()=>!!window.PDFLib);
+    await loadScript("js/report-pdf.js?v=pdf-20260918e",()=>!!window.ewardenReportPdf);
+  }
+
+  function loadIconsWhenIdle(){
+    const start=()=>loadScript("js/vendor/lucide.min.js",()=>!!window.lucide)
+      .then(()=>window.lucide?.createIcons()).catch(console.error);
+    if("requestIdleCallback" in window) requestIdleCallback(start,{timeout:1800});
+    else setTimeout(start,250);
+  }
 
   function gas(fn, ...args){
     return window.ewardenApi.call(fn, ...args);
+  }
+
+  const INITIAL_CACHE_KEY="ewarden-initial-data-v1";
+
+  function applyInitialPayload(init){
+    settings=init.settings||{};
+    radiusOptions=init.radiusOptions||[];
+    wardens=init.wardens||[];
+    reportOptions=init.reportOptions||[];
+    applySettings();populateRadius();populateWardens();populateAdminWardenFilter();populateReportOptions();renderWardenAdmin();
+  }
+
+  function cacheInitialPayload(init){
+    try{localStorage.setItem(INITIAL_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data:init}));}catch(_error){}
+  }
+
+  function restoreInitialPayload(){
+    try{
+      const cached=JSON.parse(localStorage.getItem(INITIAL_CACHE_KEY)||"null");
+      if(!cached?.data) return false;
+      applyInitialPayload(cached.data);
+      renderDuty();renderMine();renderAdminRecords();
+      return true;
+    }catch(_error){return false;}
   }
 
   function loadXlsx(){
@@ -650,8 +701,9 @@
     const button=$("print-report");
     const printWindow=window.open("","_blank");
     try{
-      if(!window.ewardenReportPdf) throw new Error("Modul PDF belum tersedia. Muat semula aplikasi.");
       button.disabled=true;
+      button.innerHTML='<span class="spinner !h-5 !w-5 !border-[3px]"></span>MEMUAT MODUL PDF...';
+      await ensureReportPdf();
       button.innerHTML='<span class="spinner !h-5 !w-5 !border-[3px]"></span>MENJANA PDF...';
       const {label}=reportBounds();
       const rows=currentReportRows.map(r=>({...r,reportStatus:reportStatus(r)}));
@@ -749,12 +801,14 @@
       ]);
       settings=init.settings||{};radiusOptions=init.radiusOptions||[];wardens=init.wardens||[];reportOptions=init.reportOptions||[];
       allWardens=wardenData||[];records=attendanceData||[];
+      cacheInitialPayload(init);
       applySettings();populateRadius();populateWardens();populateAdminWardenFilter();populateReportOptions();renderWardenAdmin();
       renderDuty();renderMine();renderAdminRecords();await renderStats(statsData);
       return;
     }
 
     const init=await gas("getInitialAppData");
+    cacheInitialPayload(init);
     settings=init.settings||{};radiusOptions=init.radiusOptions||[];wardens=init.wardens||[];reportOptions=init.reportOptions||[];
     allWardens=[];
     applySettings();populateRadius();populateWardens();populateAdminWardenFilter();populateReportOptions();renderWardenAdmin();
@@ -772,9 +826,10 @@
     applyAdaptiveScale();
     applyViewportPresentation();
     updateClock();setInterval(updateClock,1000);
+    if(restoreInitialPayload()) $("loading-overlay").style.display="none";
     try{
       await refreshData();
-      lucide.createIcons();
+      loadIconsWhenIdle();
     }catch(e){
       console.error(e);toast("Ralat memuatkan data: "+e.message);
     }finally{
@@ -783,7 +838,7 @@
   }
 
   async function loadPartial(slotId,path){
-    const response=await fetch(path,{cache:"no-store"});
+    const response=await fetch(path,{cache:"default"});
     if(!response.ok) throw new Error(`Gagal memuatkan ${path}.`);
     $(slotId).innerHTML=await response.text();
   }
