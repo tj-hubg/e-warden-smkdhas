@@ -511,12 +511,14 @@
   }
 
   function reportCoordinate(lat,lng){
+    if(lat==null||lng==null||String(lat).trim()===""||String(lng).trim()==="") return "—";
     const a=Number(lat),b=Number(lng);
     if(!Number.isFinite(a)||!Number.isFinite(b)) return "—";
     return `${a.toFixed(6)}<br>${b.toFixed(6)}`;
   }
 
   function reportMetric(value,suffix=""){
+    if(value==null||String(value).trim()==="") return "—";
     const n=Number(value);
     return Number.isFinite(n) ? `${Math.round(n)}${suffix}` : "—";
   }
@@ -602,11 +604,11 @@
     return reportPage(meta,page,total,content,isFinal?"rp-final-page":"");
   }
 
-  function buildReportPages(label){
+  function currentReportMeta(label){
     const now=new Date();
     const logo=settings.APP_LOGO||"assets/school-logo.png";
     const modeLabel=$("report-mode").selectedOptions[0]?.textContent||"Laporan Kehadiran";
-    const meta={
+    return {
       logo,
       school:settings.SCHOOL_NAME||"SMK DATUK HAJI AHMAD SAID",
       address:settings.SCHOOL_ADDRESS||"Sungai Dua, 13800 Butterworth, Pulau Pinang",
@@ -617,8 +619,13 @@
       reference:`EW/SMKDHAS/${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")}`,
       reportType:modeLabel,
       period:label,
-      generated:new Intl.DateTimeFormat("ms-MY",{dateStyle:"medium",timeStyle:"short"}).format(now)
+      generated:new Intl.DateTimeFormat("ms-MY",{dateStyle:"medium",timeStyle:"short"}).format(now),
+      radius:settings.GEOFENCE_RADIUS||"—"
     };
+  }
+
+  function buildReportPages(label){
+    const meta=currentReportMeta(label);
     const chunks=[];
     if(currentReportRows.length){
       for(let i=0;i<currentReportRows.length;i+=9) chunks.push(currentReportRows.slice(i,i+9));
@@ -631,6 +638,41 @@
       start+=chunk.length;
     });
     $("report-pages").innerHTML=pages.join("");
+  }
+
+  function reportFilename(now=new Date()){
+    const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+    const time=`${String(now.getHours()).padStart(2,"0")}-${String(now.getMinutes()).padStart(2,"0")}-${String(now.getSeconds()).padStart(2,"0")}`;
+    return `Laporan_e-WARDEN_${date}_${time}.pdf`;
+  }
+
+  async function saveAndOpenReportPdf(){
+    const button=$("print-report");
+    const printWindow=window.open("","_blank");
+    try{
+      if(!window.ewardenReportPdf) throw new Error("Modul PDF belum tersedia. Muat semula aplikasi.");
+      button.disabled=true;
+      button.innerHTML='<span class="spinner !h-5 !w-5 !border-[3px]"></span>MENJANA PDF...';
+      const {label}=reportBounds();
+      const rows=currentReportRows.map(r=>({...r,reportStatus:reportStatus(r)}));
+      const blob=await window.ewardenReportPdf.generate({meta:currentReportMeta(label),rows});
+      const url=URL.createObjectURL(blob),filename=reportFilename();
+      const link=document.createElement("a");
+      link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
+      if(printWindow){
+        printWindow.location.href=url;
+      }else{
+        toast("PDF telah disimpan. Buka fail tersebut untuk mencetak.");
+      }
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+    }catch(error){
+      if(printWindow) printWindow.close();
+      toast(error.message||"PDF gagal dijana.");
+    }finally{
+      button.disabled=false;
+      button.innerHTML='<i data-lucide="file-down"></i>SIMPAN / CETAK PDF';
+      if(window.lucide) lucide.createIcons();
+    }
   }
 
   function previewReport(){
@@ -859,7 +901,7 @@
     $("report-mode").addEventListener("change",updateReportModeUI);
     $("preview-report").addEventListener("click",previewReport);
     $("export-excel").addEventListener("click",exportExcel);
-    $("print-report").addEventListener("click",()=>window.print());
+    $("print-report").addEventListener("click",saveAndOpenReportPdf);
   }
 
   async function bootstrap(){
