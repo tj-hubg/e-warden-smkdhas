@@ -180,14 +180,11 @@
       $("school-watermark").src=logo;
       $("logo-preview").src=logo;
       $("logo-preview-wrap").classList.remove("hidden");
-      $("report-logo").src=logo;
-      $("report-logo").classList.remove("hidden");
     }else{
       $("school-logo").classList.add("hidden");
       $("logo-placeholder").classList.remove("hidden");
       $("school-watermark").removeAttribute("src");
       $("logo-preview-wrap").classList.add("hidden");
-      $("report-logo").classList.add("hidden");
     }
   }
 
@@ -496,78 +493,164 @@
     return {start,end,label:`${f.format(start)} hingga ${f.format(end)}`};
   }
 
-  function previewReport(){
-  try{
-    const {start,end,label}=reportBounds();
-    const w=$("report-warden").value;
-
-    currentReportRows=records.filter(r=>{
-      const d=parseDMY(r.date);
-      if(!d||d<start||d>end) return false;
-
-      if(w==="all") return true;
-
-      const [code,...nameParts]=w.split("|");
-      return r.wardenCode===code && r.wardenName===nameParts.join("|");
-    });
-
-    $("printable-report").classList.remove("hidden");
-    $("report-school").textContent=settings.SCHOOL_NAME||"";
-    $("report-period-title").textContent=label;
-
-    $("report-generated").textContent=
-      `Dijana: ${
-        new Intl.DateTimeFormat(
-          "ms-MY",
-          {dateStyle:"medium",timeStyle:"short"}
-        ).format(new Date())
-      }`;
-
-    $("report-summary").innerHTML=[
-      ["Jumlah Rekod",currentReportRows.length],
-      ["Lengkap",currentReportRows.filter(r=>r.status==="Lengkap").length],
-      ["Bertugas",currentReportRows.filter(r=>r.status==="Bertugas").length],
-      ["Warden Terlibat",
-        new Set(
-          currentReportRows.map(
-            r=>`${r.wardenCode}|${r.wardenName}`
-          )
-        ).size
-      ]
-    ].map(x=>
-      `<div class="rounded-2xl bg-blue-50 p-3">
-        <p class="text-xs font-bold text-slate-500">${x[0]}</p>
-        <p class="mt-1 text-xl font-extrabold text-blue-950">${x[1]}</p>
-      </div>`
-    ).join("");
-
-    $("report-records").innerHTML=currentReportRows.length
-      ? currentReportRows.map((r,i)=>`
-        <tr class="border-t">
-          <td class="p-3">${i+1}</td>
-          <td class="p-3">${esc(r.date)}</td>
-          <td class="p-3">${esc(r.wardenCode)}</td>
-          <td class="p-3">${esc(r.wardenName)}</td>
-          <td class="p-3">${esc(r.punchIn||"—")}</td>
-          <td class="p-3">${esc(r.punchOut||"—")}</td>
-          <td class="p-3">${esc(r.duration||"—")}</td>
-          <td class="p-3">${esc(r.status)}</td>
-        </tr>
-      `).join("")
-      : `
-        <tr>
-          <td colspan="8" class="p-8 text-center text-slate-500">
-            Tiada rekod dalam tempoh dipilih.
-          </td>
-        </tr>
-      `;
-
-    toast(`${currentReportRows.length} rekod dipaparkan.`);
-
-  }catch(e){
-    toast(e.message);
+  function reportStatus(record){
+    if(record.punchOut || String(record.status).toLowerCase()==="lengkap") return "Selesai";
+    return record.date===fmtDate(new Date()) ? "Sedang Bertugas" : "Tidak Lengkap";
   }
-}
+
+  function durationMinutes(value){
+    const text=String(value||"").toLowerCase();
+    const hours=Number((text.match(/(\d+)\s*(?:jam|j|h)/)||[])[1]||0);
+    const minutes=Number((text.match(/(\d+)\s*(?:minit|m)/)||[])[1]||0);
+    return hours*60+minutes;
+  }
+
+  function durationLabel(minutes){
+    const h=Math.floor(minutes/60),m=minutes%60;
+    return `${h}j ${String(m).padStart(2,"0")}m`;
+  }
+
+  function reportCoordinate(lat,lng){
+    const a=Number(lat),b=Number(lng);
+    if(!Number.isFinite(a)||!Number.isFinite(b)) return "—";
+    return `${a.toFixed(6)}<br>${b.toFixed(6)}`;
+  }
+
+  function reportMetric(value,suffix=""){
+    const n=Number(value);
+    return Number.isFinite(n) ? `${Math.round(n)}${suffix}` : "—";
+  }
+
+  function reportHeader(meta,page,total){
+    return `
+      <img class="rp-watermark" src="${esc(meta.logo)}" alt="" aria-hidden="true">
+      <header class="rp-header">
+        <div class="rp-school">
+          <img src="${esc(meta.logo)}" alt="Logo sekolah">
+          <div><small>INSTITUSI</small><strong>${esc(meta.school)}</strong><span>${esc(meta.address)} &nbsp;|&nbsp; Kod Sekolah ${esc(meta.schoolCode)}</span></div>
+        </div>
+        <h2>LAPORAN KEHADIRAN WARDEN</h2>
+        <div class="rp-app"><strong>${esc(meta.appName)}</strong><span>SMKDHAS &nbsp;|&nbsp; ${esc(meta.year)}</span></div>
+      </header>
+      <div class="rp-gold-line"></div>
+      <div class="rp-meta">
+        <div><b>NOMBOR RUJUKAN</b><span>${esc(meta.reference)}</span></div>
+        <div><b>JENIS LAPORAN</b><span>${esc(meta.reportType)}</span></div>
+        <div><b>TEMPOH</b><span>${esc(meta.period)}</span></div>
+        <div><b>DIJANA PADA</b><span>${esc(meta.generated)}</span></div>
+        <div><b>STATUS</b><span>Dokumen Sistem e-WARDEN</span></div>
+      </div>
+      <footer class="rp-footer">
+        <b>${esc(meta.motto)}</b><span>${esc(meta.appName)} &nbsp;|&nbsp; LAPORAN KEHADIRAN</span><strong>MUKA SURAT ${page} / ${total}</strong>
+      </footer>`;
+  }
+
+  function reportPage(meta,page,total,content,extraClass=""){
+    return `<article class="report-page ${extraClass}">${reportHeader(meta,page,total)}<div class="rp-body">${content}</div></article>`;
+  }
+
+  function reportTitle(title,subtitle){
+    return `<div class="rp-title"><h3>${esc(title)}</h3><p>${esc(subtitle)}</p><i></i></div>`;
+  }
+
+  function summaryPage(meta,page,total,rows){
+    const completed=rows.filter(r=>reportStatus(r)==="Selesai").length;
+    const incomplete=rows.filter(r=>reportStatus(r)==="Tidak Lengkap").length;
+    const active=rows.filter(r=>reportStatus(r)==="Sedang Bertugas").length;
+    const wardens=new Map();
+    rows.forEach(r=>{
+      const key=`${r.wardenCode}|${r.wardenName}`;
+      if(!wardens.has(key)) wardens.set(key,{code:r.wardenCode,name:r.wardenName,total:0,completed:0,incomplete:0,active:0,minutes:0});
+      const item=wardens.get(key),status=reportStatus(r);
+      item.total++;
+      if(status==="Selesai") item.completed++;
+      if(status==="Tidak Lengkap") item.incomplete++;
+      if(status==="Sedang Bertugas") item.active++;
+      item.minutes+=durationMinutes(r.duration);
+    });
+    const wardenRows=[...wardens.values()].map((w,i)=>`<tr><td>${i+1}</td><td>${esc(w.code)}</td><td>${esc(w.name)}</td><td>${w.total}</td><td>${w.completed}</td><td>${w.incomplete}</td><td>${w.active}</td><td>${durationLabel(w.minutes)}</td></tr>`).join("") || `<tr><td colspan="8">Tiada rekod dalam tempoh dipilih.</td></tr>`;
+    const rate=rows.length ? ((completed/rows.length)*100).toFixed(1) : "0.0";
+    const cards=[["Jumlah Warden",wardens.size,"blue"],["Jumlah Sesi",rows.length,"green"],["Sesi Selesai",completed,"gold"],["Sesi Tidak Lengkap",incomplete,"red"],["Sedang Bertugas",active,"amber"]]
+      .map(x=>`<div class="rp-kpi ${x[2]}"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("");
+    const content=`${reportTitle("RINGKASAN EKSEKUTIF","Prestasi kehadiran, status sesi dan kawalan pengurusan")}
+      <div class="rp-kpis">${cards}</div>
+      <h4 class="rp-subheading">PRESTASI WARDEN</h4>
+      <div class="rp-summary-grid">
+        <table class="rp-table rp-warden-table"><thead><tr><th>Bil.</th><th>ID Warden</th><th>Nama Warden</th><th>Jumlah<br>Sesi</th><th>Sesi<br>Selesai</th><th>Tidak<br>Lengkap</th><th>Sedang<br>Bertugas</th><th>Jumlah<br>Tempoh</th></tr></thead><tbody>${wardenRows}</tbody></table>
+        <aside class="rp-observation"><h4>PEMERHATIAN PENGURUSAN</h4><p>• Kadar sesi selesai keseluruhan: ${rate}%.</p><p>• ${incomplete} sesi tidak lengkap perlu semakan pentadbiran.</p><p>• ${active} sesi sedang berlangsung semasa laporan dijana.</p><p>• Geofence aktif: ${esc(settings.GEOFENCE_RADIUS||"—")} meter.</p></aside>
+      </div>`;
+    return reportPage(meta,page,total,content,"rp-summary-page");
+  }
+
+  function signatureBlock(){
+    return `<div class="rp-approval-title">PENGESAHAN LAPORAN</div><div class="rp-signatures">
+      ${["Disediakan oleh","Disemak oleh","Disahkan oleh"].map(title=>`<div class="rp-sign"><b>${title}</b><div class="rp-sign-line"></div><span>Nama:</span><span>Jawatan:</span><span>Tarikh: __________________</span></div>`).join("")}
+    </div>`;
+  }
+
+  function detailPage(meta,page,total,rows,startNumber,isFinal){
+    const body=rows.length ? rows.map((r,i)=>{
+      const status=reportStatus(r);
+      const statusClass=status==="Selesai"?"done":status==="Tidak Lengkap"?"incomplete":"active";
+      return `<tr><td>${startNumber+i}</td><td>${esc(r.date)}</td><td>${esc(r.wardenCode)}</td><td>${esc(r.wardenName)}</td><td>${esc(r.punchIn||"—")}</td><td>${reportCoordinate(r.punchInLat,r.punchInLng)}</td><td>${reportMetric(r.punchInDistance)}</td><td>${reportMetric(r.punchInAccuracy)}</td><td>${esc(r.punchOut||"—")}</td><td>${reportCoordinate(r.punchOutLat,r.punchOutLng)}</td><td>${reportMetric(r.punchOutDistance)}</td><td>${reportMetric(r.punchOutAccuracy)}</td><td>${esc(r.duration||"—")}</td><td class="rp-status ${statusClass}">${status}</td></tr>`;
+    }).join("") : `<tr><td colspan="14">Tiada rekod dalam tempoh dipilih.</td></tr>`;
+    const endNumber=rows.length?startNumber+rows.length-1:0;
+    const content=`${reportTitle("REKOD KEHADIRAN TERPERINCI",rows.length?`Sesi ${startNumber} hingga ${endNumber} | Masa, tempoh, status serta data GPS Punch-In dan Punch-Out`:"Tiada sesi dalam tempoh dipilih")}
+      <table class="rp-table rp-detail-table"><thead><tr><th>Bil.</th><th>Tarikh</th><th>ID Warden</th><th>Nama Warden</th><th>Masa<br>Punch-In</th><th>Koordinat<br>Punch-In</th><th>Jarak<br>(m)</th><th>Ketepatan<br>(m)</th><th>Masa<br>Punch-Out</th><th>Koordinat<br>Punch-Out</th><th>Jarak<br>(m)</th><th>Ketepatan<br>(m)</th><th>Tempoh</th><th>Status</th></tr></thead><tbody>${body}</tbody></table>
+      <div class="rp-note"><span>Jarak diukur daripada pusat geofence. Ketepatan ialah anggaran GPS peranti semasa transaksi.</span><span>"Tidak Lengkap" bermaksud Punch-Out tiada; "Sedang Bertugas" bermaksud sesi masih aktif semasa laporan dijana.</span></div>
+      ${isFinal?signatureBlock():""}`;
+    return reportPage(meta,page,total,content,isFinal?"rp-final-page":"");
+  }
+
+  function buildReportPages(label){
+    const now=new Date();
+    const logo=settings.APP_LOGO||"assets/school-logo.png";
+    const modeLabel=$("report-mode").selectedOptions[0]?.textContent||"Laporan Kehadiran";
+    const meta={
+      logo,
+      school:settings.SCHOOL_NAME||"SMK DATUK HAJI AHMAD SAID",
+      address:settings.SCHOOL_ADDRESS||"Sungai Dua, 13800 Butterworth, Pulau Pinang",
+      schoolCode:settings.SCHOOL_CODE||"PEA2052",
+      appName:settings.APP_NAME||"e-WARDEN",
+      motto:settings.SCHOOL_MOTTO||"BERDISIPLIN, BERDEDIKASI",
+      year:String(now.getFullYear()),
+      reference:`EW/SMKDHAS/${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")}`,
+      reportType:modeLabel,
+      period:label,
+      generated:new Intl.DateTimeFormat("ms-MY",{dateStyle:"medium",timeStyle:"short"}).format(now)
+    };
+    const chunks=[];
+    if(currentReportRows.length){
+      for(let i=0;i<currentReportRows.length;i+=9) chunks.push(currentReportRows.slice(i,i+9));
+    }else chunks.push([]);
+    const total=1+chunks.length;
+    const pages=[summaryPage(meta,1,total,currentReportRows)];
+    let start=1;
+    chunks.forEach((chunk,index)=>{
+      pages.push(detailPage(meta,index+2,total,chunk,start,index===chunks.length-1));
+      start+=chunk.length;
+    });
+    $("report-pages").innerHTML=pages.join("");
+  }
+
+  function previewReport(){
+    try{
+      const {start,end,label}=reportBounds();
+      const w=$("report-warden").value;
+      currentReportRows=records.filter(r=>{
+        const d=parseDMY(r.date);
+        if(!d||d<start||d>end) return false;
+        if(w==="all") return true;
+        const [code,...nameParts]=w.split("|");
+        return r.wardenCode===code && r.wardenName===nameParts.join("|");
+      }).sort((a,b)=>(parseDMY(a.date)-parseDMY(b.date))||String(a.punchIn).localeCompare(String(b.punchIn),"ms",{numeric:true}));
+      buildReportPages(label);
+      $("printable-report").classList.remove("hidden");
+      toast(`${currentReportRows.length} sesi dipaparkan.`);
+    }catch(e){
+      toast(e.message);
+    }
+  }
 
   async function exportExcel(){
     if(!currentReportRows.length){toast("Tiada rekod untuk dieksport.");return}
@@ -580,9 +663,10 @@
         ["Tempoh",label],
         ["Tarikh Dijana",new Date().toLocaleString("ms-MY")],
         [],
-        ["Jumlah Rekod",currentReportRows.length],
-        ["Rekod Lengkap",currentReportRows.filter(r=>r.status==="Lengkap").length],
-        ["Masih Bertugas",currentReportRows.filter(r=>r.status==="Bertugas").length]
+        ["Jumlah Sesi",currentReportRows.length],
+        ["Sesi Selesai",currentReportRows.filter(r=>reportStatus(r)==="Selesai").length],
+        ["Sesi Tidak Lengkap",currentReportRows.filter(r=>reportStatus(r)==="Tidak Lengkap").length],
+        ["Sedang Bertugas",currentReportRows.filter(r=>reportStatus(r)==="Sedang Bertugas").length]
       ];
       const detail=currentReportRows.map((r,i)=>({
         "Bil":i+1,"Tarikh":r.date,"Kod Warden":r.wardenCode,"Nama Warden":r.wardenName,
@@ -590,7 +674,7 @@
         "Ketepatan Punch-In (m)":r.punchInAccuracy,"Jarak Punch-In (m)":r.punchInDistance,
         "Punch-Out":r.punchOut,"Lat Punch-Out":r.punchOutLat,"Lng Punch-Out":r.punchOutLng,
         "Ketepatan Punch-Out (m)":r.punchOutAccuracy,"Jarak Punch-Out (m)":r.punchOutDistance,
-        "Tempoh":r.duration,"Status":r.status
+        "Tempoh":r.duration,"Status":reportStatus(r)
       }));
       const wb=XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),"RINGKASAN");
@@ -657,7 +741,7 @@
   }
 
   async function loadPartial(slotId,path){
-    const response=await fetch(path,{cache:"default"});
+    const response=await fetch(path,{cache:"no-store"});
     if(!response.ok) throw new Error(`Gagal memuatkan ${path}.`);
     $(slotId).innerHTML=await response.text();
   }
