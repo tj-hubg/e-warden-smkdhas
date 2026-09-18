@@ -49,30 +49,8 @@
           </div>
 
           <div id="printable-report" class="mt-6 hidden">
-            <div class="raised-card rounded-3xl bg-white p-5">
-              <div class="mb-5 flex items-center gap-4 border-b pb-4">
-                <img id="report-logo" class="hidden h-20 w-20 object-contain">
-                <div>
-                  <p id="report-school" class="text-sm font-bold"></p>
-                  <h3 class="text-xl font-extrabold text-blue-950">LAPORAN KEHADIRAN WARDEN</h3>
-                  <p id="report-period-title" class="text-sm text-slate-600"></p>
-                  <p id="report-generated" class="text-xs text-slate-400"></p>
-                </div>
-              </div>
-
-              <div id="report-summary" class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4"></div>
-
-              <div class="overflow-x-auto">
-                <table class="w-full min-w-[900px] text-left text-sm">
-                  <thead class="bg-blue-950 text-xs uppercase text-yellow-200">
-                    <tr>
-                      <th class="p-3">Bil</th><th class="p-3">Tarikh</th><th class="p-3">Kod</th><th class="p-3">Nama</th>
-                      <th class="p-3">Punch-In</th><th class="p-3">Punch-Out</th><th class="p-3">Tempoh</th><th class="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="report-records"></tbody>
-                </table>
-              </div>
+            <div class="report-preview-frame">
+              <div id="report-pages" class="report-pages"></div>
             </div>
 
             <div class="no-print mt-4 flex flex-col gap-3 sm:flex-row">
